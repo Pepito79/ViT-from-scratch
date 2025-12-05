@@ -1,16 +1,12 @@
 import torch
 import torch.nn as nn
-import numpy
 import torchvision.transforms as T
-from torch.optim import Adam
 import numpy as np
 
 
 class PatchEmbeddings(nn.Module):
 
-    def __init__(
-        self, image_size: int, d_model: int, patch_size: int, num_channels: int
-    ):
+    def __init__(self, image_size: int, d_model: int, patch_size, num_channels: int):
 
         super().__init__()
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -45,7 +41,7 @@ class PatchEmbeddings(nn.Module):
         return x
 
 
-class PositionalEncoding(nn.Module):
+class PositionalEmbeddings(nn.Module):
 
     def __init__(self, d_model, max_seq_length):
 
@@ -55,23 +51,23 @@ class PositionalEncoding(nn.Module):
         self.cls_token = nn.Parameter(torch.zeros(1, 1, d_model))
 
         # Create the positional encoding
-        self.pe = torch.zeros(max_seq_length, d_model)
+        pe = torch.zeros(max_seq_length, d_model)
 
         # We create a PE for every patch
         for pos in range(max_seq_length):
             for i in range(d_model):
                 if i % 2 == 0:
-                    self.pe[pos][i] = np.sin(pos / (10000 ** (i / d_model)))
+                    pe[pos][i] = np.sin(pos / (10000 ** (i / d_model)))
                 else:
-                    self.pe[pos][i] = np.sin(pos / (10000 ** ((i - 1) / d_model)))
+                    pe[pos][i] = np.sin(pos / (10000 ** ((i - 1) / d_model)))
 
         # Then we need to save the PE to the model but not as parameter that gonna be trained
-        self.register_buffer("pe", self.pe.unsqueeze(0))
+        self.register_buffer("pe", pe.unsqueeze(0))
 
     def forward(self, x: torch.Tensor):
 
         # Expand the cls token to have one for every image of the batch
-        cls_tokens = self.cls_token.expand(x.size[0], -1, -1)
+        cls_tokens = self.cls_token.expand(x.size()[0], -1, -1)
 
         # Concatenate these cls tokens to the embeddings
         x = torch.concat((cls_tokens, x), dim=1)

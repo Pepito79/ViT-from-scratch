@@ -27,7 +27,7 @@ class AttentionHead(nn.Module):
         # Compute the attention mechanism
         temp = Q @ K.transpose(-2, -1)  # We need to transpose the matrix
         temp = temp / (self.head_size) ** 0.5  # We scale it like in the paper
-        temp = torch.softmax(temp)  # We apply the softmax
+        temp = torch.softmax(temp, dim=-1)  # We apply the softmax
 
         # And here we got our attention matrix
         attention = temp @ V
@@ -57,7 +57,7 @@ class MultiHeadAttention(nn.Module):
     def forward(self, x: torch.Tensor):
 
         # Concatenate the output of every head
-        h = torch.cat([head(x) for head in self.heads], dim=1)
+        h = torch.cat([head(x) for head in self.heads], dim=-1)
 
         attention = self.W_O(h)
 
